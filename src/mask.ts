@@ -24,6 +24,9 @@ export const draw = (
 ) => {
   if (predictions.length > 0) {
     predictions.forEach((prediction) => {
+      if (prediction.kind !== "MediaPipePredictionValues") {
+        return;
+      }
       // const keypoints = prediction.scaledMesh;
       // const boundingBox = prediction.boundingBox;
       // const bottomRight = boundingBox.bottomRight as Coord2D;
