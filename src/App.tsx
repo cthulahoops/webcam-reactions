@@ -8,6 +8,21 @@ import "./App.scss";
 import Webcam from "react-webcam";
 import { draw } from "./mask";
 
+const useTimeoutInterval = (callback: () => Promise<void>, delay: number) => {
+  const timerRef = useRef<number>(0);
+
+  const onTimeout = useCallback(() => {
+    callback()
+      .then(() => (timerRef.current = setTimeout(onTimeout, delay)))
+      .catch((e) => console.error(e));
+  }, [callback, delay]);
+
+  useEffect(() => {
+    timerRef.current = setTimeout(onTimeout, delay);
+    return () => clearTimeout(timerRef.current);
+  }, [onTimeout, delay]);
+};
+
 export default function App() {
   const webcam = useRef<Webcam>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -53,30 +68,11 @@ export default function App() {
     });
   }, [webcam.current?.video?.readyState, runFaceDetect]);
 
-  // useEffect(() => {
-  //   if (model) {
-  //     detect(model);
-  //   }
-  // }, [model]);
-
-  const requestRef = useRef<number>(0);
-
-  const animate = useCallback(async () => {
+  useTimeoutInterval(async () => {
     if (model) {
       await detect(model);
     }
-//    console.log("animate", time);
-    // The 'state' will always be the initial value here
-    requestRef.current = requestAnimationFrame(animate);
-  }, [model]);
-    
-  useEffect(() => {
-    if (requestRef.current) {
-      cancelAnimationFrame(requestRef.current);
-    }
-    requestRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(requestRef.current);
-  }, [animate]);
+  }, 1000);
 
   return (
     <>
