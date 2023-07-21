@@ -3,6 +3,7 @@ import "@tensorflow/tfjs-converter";
 import "@tensorflow/tfjs-backend-webgl";
 import * as faceLandmarksDetection from "@tensorflow-models/face-landmarks-detection";
 import { MediaPipeFaceMesh } from "@tensorflow-models/face-landmarks-detection/dist/types";
+import { AnnotatedPrediction } from "@tensorflow-models/face-landmarks-detection/dist/mediapipe-facemesh";
 import { useRef, useState, useEffect, useCallback } from "react";
 import "./App.scss";
 import Webcam from "react-webcam";
@@ -23,62 +24,69 @@ const useTimeoutInterval = (callback: () => Promise<void>, delay: number) => {
   }, [onTimeout, delay]);
 };
 
+async function detect(
+  model: MediaPipeFaceMesh,
+  webcam: Webcam,
+): Promise<AnnotatedPrediction[] | undefined> {
+  if (webcam.video.readyState !== 4) {
+    return;
+  }
+  const video = webcam.video;
+  return await model.estimateFaces({
+    input: video,
+  });
+}
+
 export default function App() {
-  const webcam = useRef<Webcam>(null);
-  const canvas = useRef<HTMLCanvasElement>(null);
+  const webcamRef = useRef<Webcam>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [model, setModel] = useState<MediaPipeFaceMesh | null>(null);
 
-  const runFaceDetect = useCallback(async () => {
-    const model = await faceLandmarksDetection.load(
-      faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
-    );
+  useEffect(() => {
+    const loadModel = async () => {
+      console.log("Loading model...");
+      const model = await faceLandmarksDetection.load(
+        faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
+      );
 
-    console.log("model loaded: ", model);
+      console.log("model loaded: ", model);
 
-    setModel(model);
+      setModel(model);
+    };
+    void loadModel();
   }, []);
 
-  const detect = async (model: MediaPipeFaceMesh) => {
-    if (webcam.current) {
-      const webcamCurrent = webcam.current;
-      // go next step only when the video is completely uploaded.
-      if (webcamCurrent.video.readyState === 4) {
-        const video = webcamCurrent.video;
-        const predictions = await model.estimateFaces({
-          input: video,
-        });
-        if (predictions.length) {
-          console.log(predictions);
-          const videoWidth = webcam.current?.video.videoWidth;
-          const videoHeight = webcam.current?.video.videoHeight;
-          canvas.current.width = videoWidth;
-          canvas.current.height = videoHeight;
-          const ctx = canvas.current.getContext("2d");
-          draw(predictions, ctx, videoWidth, videoHeight);
-          console.log("Drawn.");
-        }
+  const detectDraw = async (model: MediaPipeFaceMesh) => {
+    if (webcamRef.current) {
+      const webcam = webcamRef.current;
+
+      const predictions = await detect(model, webcam);
+
+      if (predictions) {
+        const canvas = canvasRef.current;
+        const context = canvas.getContext("2d");
+
+        const videoWidth = webcam.video.videoWidth;
+        const videoHeight = webcam.video.videoHeight;
+        canvas.width = videoWidth;
+        canvas.height = videoHeight;
+        draw(context, predictions, videoWidth, videoHeight);
       }
     }
   };
 
-  useEffect(() => {
-    runFaceDetect().catch((e) => {
-      console.error(e);
-    });
-  }, [webcam.current?.video?.readyState, runFaceDetect]);
-
   useTimeoutInterval(async () => {
     if (model) {
-      await detect(model);
+      await detectDraw(model);
     }
-  }, 1000);
+  }, 100);
 
   return (
     <>
       <div className="camera">
-        <Webcam ref={webcam} audio={false} />
-        <canvas ref={canvas} />
+        <Webcam ref={webcamRef} audio={false} />
+        <canvas ref={canvasRef} />
       </div>
     </>
   );

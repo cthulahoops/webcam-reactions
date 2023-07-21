@@ -17,8 +17,8 @@ const drawFeature = (ctx: CanvasRenderingContext2D, points: Coords3D, color: str
 
 
 export const draw = (
-  predictions: AnnotatedPrediction[],
   ctx: CanvasRenderingContext2D,
+  predictions: AnnotatedPrediction[],
   width: number,
   height: number
 ) => {
