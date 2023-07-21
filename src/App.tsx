@@ -9,34 +9,6 @@ import "./App.scss";
 import Webcam from "react-webcam";
 import { draw } from "./mask";
 
-const useTimeoutInterval = (callback: () => Promise<void>, delay: number) => {
-  const timerRef = useRef<number>(0);
-
-  const onTimeout = useCallback(() => {
-    callback()
-      .then(() => (timerRef.current = setTimeout(onTimeout, delay)))
-      .catch((e) => console.error(e));
-  }, [callback, delay]);
-
-  useEffect(() => {
-    timerRef.current = setTimeout(onTimeout, delay);
-    return () => clearTimeout(timerRef.current);
-  }, [onTimeout, delay]);
-};
-
-async function detect(
-  model: MediaPipeFaceMesh,
-  webcam: Webcam,
-): Promise<AnnotatedPrediction[] | undefined> {
-  if (webcam.video.readyState !== 4) {
-    return;
-  }
-  const video = webcam.video;
-  return await model.estimateFaces({
-    input: video,
-  });
-}
-
 export default function App() {
   const webcamRef = useRef<Webcam>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -91,3 +63,32 @@ export default function App() {
     </>
   );
 }
+
+const useTimeoutInterval = (callback: () => Promise<void>, delay: number) => {
+  const timerRef = useRef<number>(0);
+
+  const onTimeout = useCallback(() => {
+    callback()
+      .then(() => (timerRef.current = setTimeout(onTimeout, delay)))
+      .catch((e) => console.error(e));
+  }, [callback, delay]);
+
+  useEffect(() => {
+    timerRef.current = setTimeout(onTimeout, delay);
+    return () => clearTimeout(timerRef.current);
+  }, [onTimeout, delay]);
+};
+
+async function detect(
+  model: MediaPipeFaceMesh,
+  webcam: Webcam,
+): Promise<AnnotatedPrediction[] | undefined> {
+  if (webcam.video.readyState !== 4) {
+    return;
+  }
+  const video = webcam.video;
+  return await model.estimateFaces({
+    input: video,
+  });
+}
+
