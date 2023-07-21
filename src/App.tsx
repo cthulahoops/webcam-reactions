@@ -7,7 +7,7 @@ import { AnnotatedPrediction } from "@tensorflow-models/face-landmarks-detection
 import { useRef, useState, useEffect, useCallback } from "react";
 import "./App.scss";
 import Webcam from "react-webcam";
-import { draw } from "./mask";
+import { draw } from "./drawing";
 
 export default function App() {
   const webcamRef = useRef<Webcam>(null);
