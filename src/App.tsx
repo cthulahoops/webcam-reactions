@@ -13,21 +13,15 @@ export default function App() {
   const webcamRef = useRef<Webcam>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const [model, setModel] = useState<MediaPipeFaceMesh | null>(null);
+  const model = useQuery(useCallback(async () => {
+    console.log("Loading model...");
+    const model = await faceLandmarksDetection.load(
+      faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
+    );
 
-  useEffect(() => {
-    const loadModel = async () => {
-      console.log("Loading model...");
-      const model = await faceLandmarksDetection.load(
-        faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
-      );
-
-      console.log("model loaded: ", model);
-
-      setModel(model);
-    };
-    void loadModel();
-  }, []);
+    console.log("model loaded: ", model);
+    return model;
+  }, []));
 
   const detectDraw = async (model: MediaPipeFaceMesh) => {
     if (webcamRef.current) {
@@ -64,6 +58,18 @@ export default function App() {
   );
 }
 
+function useQuery<Type>(query: () => Promise<Type>): Type | null {
+  const [data, setData] = useState<Type>(null);
+
+  useEffect(() => {
+    query()
+      .then((data) => setData(data))
+      .catch((e) => console.error(e));
+  }, [query]);
+
+  return data;
+}
+
 const useTimeoutInterval = (callback: () => Promise<void>, delay: number) => {
   const timerRef = useRef<number>(0);
 
@@ -91,4 +97,3 @@ async function detect(
     input: video,
   });
 }
-
