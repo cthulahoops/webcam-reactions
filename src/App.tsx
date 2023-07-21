@@ -74,12 +74,19 @@ const useTimeoutInterval = (callback: () => Promise<void>, delay: number) => {
   const timerRef = useRef<number>(0);
 
   const onTimeout = useCallback(() => {
+    timerRef.current = 0;
     callback()
-      .then(() => (timerRef.current = setTimeout(onTimeout, delay)))
-      .catch((e) => console.error(e));
+    .then(() => {
+        if (!timerRef.current) {
+          timerRef.current = setTimeout(onTimeout, delay);
+        }
+      }).catch((e) => console.error(e));
   }, [callback, delay]);
 
   useEffect(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
     timerRef.current = setTimeout(onTimeout, delay);
     return () => clearTimeout(timerRef.current);
   }, [onTimeout, delay]);
