@@ -13,15 +13,20 @@ export default function App() {
   const webcamRef = useRef<Webcam>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const model = useQuery(useCallback(async () => {
-    console.log("Loading model...");
-    const model = await faceLandmarksDetection.load(
-      faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
-    );
+  const model = useQuery(
+    useCallback(async () => {
+      console.log("Loading model...");
+      const model = await faceLandmarksDetection.load(
+        faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
+        {
+          maxFaces: 3
+        }
+      );
 
-    console.log("model loaded: ", model);
-    return model;
-  }, []));
+      console.log("model loaded: ", model);
+      return model;
+    }, []),
+  );
 
   const detectDraw = async (model: MediaPipeFaceMesh) => {
     if (webcamRef.current) {
@@ -76,11 +81,12 @@ const useTimeoutInterval = (callback: () => Promise<void>, delay: number) => {
   const onTimeout = useCallback(() => {
     timerRef.current = 0;
     callback()
-    .then(() => {
+      .then(() => {
         if (!timerRef.current) {
           timerRef.current = setTimeout(onTimeout, delay);
         }
-      }).catch((e) => console.error(e));
+      })
+      .catch((e) => console.error(e));
   }, [callback, delay]);
 
   useEffect(() => {
@@ -101,6 +107,6 @@ async function detect(
   }
   const video = webcam.video;
   return await model.estimateFaces({
-    input: video,
+    input: video
   });
 }
